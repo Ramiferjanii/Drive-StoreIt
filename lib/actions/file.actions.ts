@@ -9,16 +9,22 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/actions/user.actions";
 
 
+// Interface for Appwrite errors
+interface AppwriteError extends Error {
+  code?: string | number;
+  response?: Record<string, unknown>;
+}
 
 const handleError = (error: unknown, message: string) => {
   console.error("File Action Error:", { error, message });
   
   // If it's an Appwrite error, extract more details
   if (error && typeof error === 'object' && 'message' in error) {
+    const appwriteError = error as AppwriteError;
     console.error("Appwrite Error Details:", {
-      message: error.message,
-      code: (error as any).code,
-      response: (error as any).response
+      message: appwriteError.message,
+      code: appwriteError.code,
+      response: appwriteError.response
     });
   }
   
