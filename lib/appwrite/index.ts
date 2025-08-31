@@ -26,23 +26,33 @@ export const createSessionClient = async () => {
 };
 
 export const createAdminClient = async () => {
-  const client = new Client()
-    .setEndpoint(appwriteConfig.endpointUrl)
-    .setProject(appwriteConfig.projectId)
-    .setKey(appwriteConfig.secretKey);
+  try {
+    // Validate required environment variables
+    if (!appwriteConfig.endpointUrl || !appwriteConfig.projectId || !appwriteConfig.secretKey) {
+      throw new Error("Missing required Appwrite environment variables. Please check your configuration.");
+    }
 
-  return {
-    get account() {
-      return new Account(client);
-    },
-    get databases() {
-      return new Databases(client);
-    },
-    get storage() {
-      return new Storage(client);
-    },
-    get avatars() {
-      return new Avatars(client);
-    },
-  };
+    const client = new Client()
+      .setEndpoint(appwriteConfig.endpointUrl)
+      .setProject(appwriteConfig.projectId)
+      .setKey(appwriteConfig.secretKey);
+
+    return {
+      get account() {
+        return new Account(client);
+      },
+      get databases() {
+        return new Databases(client);
+      },
+      get storage() {
+        return new Storage(client);
+      },
+      get avatars() {
+        return new Avatars(client);
+      },
+    };
+  } catch (error) {
+    console.error("Failed to create Admin client:", error);
+    throw new Error(`Failed to create Appwrite admin client: ${error instanceof Error ? error.message : String(error)}`);
+  }
 };

@@ -11,8 +11,18 @@ import { getCurrentUser } from "@/lib/actions/user.actions";
 
 
 const handleError = (error: unknown, message: string) => {
-  console.log(error, message);
-  throw error;
+  console.error("File Action Error:", { error, message });
+  
+  // If it's an Appwrite error, extract more details
+  if (error && typeof error === 'object' && 'message' in error) {
+    console.error("Appwrite Error Details:", {
+      message: error.message,
+      code: (error as any).code,
+      response: (error as any).response
+    });
+  }
+  
+  throw new Error(`${message}: ${error instanceof Error ? error.message : String(error)}`);
 };
 
 export const uploadFile = async ({
@@ -21,9 +31,18 @@ export const uploadFile = async ({
   accountId,
   path,
 }: UploadFileProps) => {
-  const { storage, databases } = await createAdminClient();
-
   try {
+    // Validate environment variables
+    if (!appwriteConfig.bucketId || !appwriteConfig.databaseId || !appwriteConfig.filesCollectionId) {
+      throw new Error("Missing required Appwrite configuration. Please check your environment variables.");
+    }
+
+    const { storage, databases } = await createAdminClient();
+
+    if (!storage || !databases) {
+      throw new Error("Failed to create Appwrite client");
+    }
+
     const inputFile = InputFile.fromBuffer(file, file.name);
 
     const bucketFile = await storage.createFile(
@@ -52,13 +71,19 @@ export const uploadFile = async ({
         fileDocument,
       )
       .catch(async (error: unknown) => {
-        await storage.deleteFile(appwriteConfig.bucketId, bucketFile.$id);
-        handleError(error, "Failed to create file document");
+        // Clean up the uploaded file if document creation fails
+        try {
+          await storage.deleteFile(appwriteConfig.bucketId, bucketFile.$id);
+        } catch (cleanupError) {
+          console.error("Failed to cleanup bucket file:", cleanupError);
+        }
+        throw error;
       });
 
     revalidatePath(path);
     return parseStringify(newFile);
   } catch (error) {
+    console.error("Upload File Error:", error);
     handleError(error, "Failed to upload file");
   }
 };

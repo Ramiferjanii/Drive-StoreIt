@@ -52,7 +52,22 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
               );
             }
           },
-        );
+        ).catch((error) => {
+          console.error("File upload failed:", error);
+          toast({
+            description: (
+              <p className="body-2 text-white">
+                <span className="font-semibold">{file.name}</span> failed to upload. 
+                {error.message && ` Error: ${error.message}`}
+              </p>
+            ),
+            className: "error-toast",
+          });
+          // Remove the file from the list on error
+          setFiles((prevFiles) =>
+            prevFiles.filter((f) => f.name !== file.name),
+          );
+        });
       });
 
       await Promise.all(uploadPromises);
