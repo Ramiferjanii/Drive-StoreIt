@@ -67,7 +67,7 @@ export const getFileType = (fileName: string) => {
   const audioExtensions = ["mp3", "wav", "ogg", "flac"];
 
   if (documentExtensions.includes(extension))
-    return { type: "document", extension };
+    return { type: "documents", extension };
   if (imageExtensions.includes(extension)) return { type: "image", extension };
   if (videoExtensions.includes(extension)) return { type: "video", extension };
   if (audioExtensions.includes(extension)) return { type: "audio", extension };
@@ -160,7 +160,7 @@ export const getFileIcon = (
       switch (type) {
         case "image":
           return "/assets/icons/file-image.svg";
-        case "document":
+        case "documents":
           return "/assets/icons/file-document.svg";
         case "video":
           return "/assets/icons/file-video.svg";
@@ -183,12 +183,20 @@ export const constructDownloadUrl = (bucketFileId: string) => {
 };
 
 // DASHBOARD UTILS
-export const getUsageSummary = (totalSpace: any) => {
+interface TotalSpace {
+  documents: { size: number; latestDate: string };
+  image: { size: number; latestDate: string };
+  video: { size: number; latestDate: string };
+  audio: { size: number; latestDate: string };
+  other: { size: number; latestDate: string };
+}
+
+export const getUsageSummary = (totalSpace: TotalSpace) => {
   return [
     {
       title: "Documents",
-      size: totalSpace.document.size,
-      latestDate: totalSpace.document.latestDate,
+      size: totalSpace.documents.size,
+      latestDate: totalSpace.documents.latestDate,
       icon: "/assets/icons/file-document-light.svg",
       url: "/documents",
     },
@@ -222,7 +230,7 @@ export const getUsageSummary = (totalSpace: any) => {
 export const getFileTypesParams = (type: string) => {
   switch (type) {
     case "documents":
-      return ["document"];
+      return ["documents"];
     case "images":
       return ["image"];
     case "media":
@@ -230,6 +238,6 @@ export const getFileTypesParams = (type: string) => {
     case "others":
       return ["other"];
     default:
-      return ["document"];
+      return ["documents"];
   }
 };

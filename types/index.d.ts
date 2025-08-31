@@ -1,6 +1,4 @@
-/* eslint-disable no-unused-vars */
-
-declare type FileType = "document" | "image" | "video" | "audio" | "other";
+declare type FileType = "documents" | "image" | "video" | "audio" | "other";
 
 declare interface ActionType {
   label: string;
@@ -70,7 +68,37 @@ declare interface ThumbnailProps {
 }
 
 declare interface ShareInputProps {
-  file: Models.Document;
+  file: FileDocument;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (email: string) => void;
+}
+
+// File document interface that extends Appwrite's Document
+declare interface FileDocument extends Models.Document {
+  type: FileType;
+  name: string;
+  url: string;
+  extension: string;
+  size: number;
+  owner: {
+    $id: string;
+    fullName: string;
+    email: string;
+    avatar: string;
+  };
+  accountId: string;
+  users: string[];
+  bucketFileId: string;
+  $id: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
+// User document interface for user documents
+declare interface UserDocument extends Models.Document {
+  $id: string;
+  fullName: string;
+  email: string;
+  avatar: string;
+  accountId: string;
 }
