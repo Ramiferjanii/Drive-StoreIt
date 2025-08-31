@@ -1,132 +1,127 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { verifySecret } from "@/lib/actions/user.actions";
+import React, { useState } from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { verifySecret, sendEmailOTP } from "@/lib/actions/user.actions";
+import { useRouter } from "next/navigation";
 
-interface OtpModalProps {
-  email: string;
+const OtpModal = ({
+  accountId,
+  email,
+}: {
   accountId: string;
-}
-
-const OtpModal = ({ email, accountId }: OtpModalProps) => {
-  const [otp, setOtp] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  email: string;
+}) => {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true);
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 6) {
-      setErrorMessage("Please enter a 6-digit OTP");
-      return;
-    }
-
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setIsLoading(true);
-    setErrorMessage("");
+
+    console.log({ accountId, password });
 
     try {
-      const result = await verifySecret({
-        accountId,
-        password: otp,
-      });
+      const sessionId = await verifySecret({ accountId, password });
 
-      if (result?.sessionId) {
-        // Successfully verified, redirect to dashboard
-        router.push("/");
-      } else {
-        setErrorMessage("Invalid OTP. Please try again.");
-      }
+      console.log({ sessionId });
+
+      if (sessionId) router.push("/");
     } catch (error) {
-      setErrorMessage("Failed to verify OTP. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.log("Failed to verify OTP", error);
     }
+
+    setIsLoading(false);
   };
 
-  const handleResendOTP = async () => {
-    // This would typically call a resend OTP function
-    setErrorMessage("OTP resent to your email");
+  const handleResendOtp = async () => {
+    await sendEmailOTP({ email });
   };
 
   return (
-    <Dialog open={true}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Verify Your Email</DialogTitle>
-          <DialogDescription>
-            We've sent a 6-digit verification code to{" "}
-            <span className="font-medium">{email}</span>
-          </DialogDescription>
-        </DialogHeader>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogContent className="shad-alert-dialog">
+        <AlertDialogHeader className="relative flex justify-center">
+          <AlertDialogTitle className="h2 text-center">
+            Enter Your OTP
+            <Image
+              src="/assets/icons/close-dark.svg"
+              alt="close"
+              width={20}
+              height={20}
+              onClick={() => setIsOpen(false)}
+              className="otp-close-button"
+            />
+          </AlertDialogTitle>
+          <AlertDialogDescription className="subtitle-2 text-center text-light-100">
+            We&apos;ve sent a code to{" "}
+            <span className="pl-1 text-brand">{email}</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-        <div className="flex flex-col items-center space-y-6 py-4">
-          <InputOTP
-            value={otp}
-            onChange={setOtp}
-            maxLength={6}
-          >
-            <InputOTPGroup className="gap-2">
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
+        <InputOTP maxLength={6} value={password} onChange={setPassword}>
+          <InputOTPGroup className="shad-otp">
+            <InputOTPSlot index={0} className="shad-otp-slot" />
+            <InputOTPSlot index={1} className="shad-otp-slot" />
+            <InputOTPSlot index={2} className="shad-otp-slot" />
+            <InputOTPSlot index={3} className="shad-otp-slot" />
+            <InputOTPSlot index={4} className="shad-otp-slot" />
+            <InputOTPSlot index={5} className="shad-otp-slot" />
+          </InputOTPGroup>
+        </InputOTP>
 
-          {errorMessage && (
-            <p className="text-sm text-red-500 text-center">{errorMessage}</p>
-          )}
-
-          <div className="flex flex-col space-y-3 w-full">
-            <Button
-              onClick={handleVerifyOTP}
-              disabled={isLoading || otp.length !== 6}
-              className="w-full"
+        <AlertDialogFooter>
+          <div className="flex w-full flex-col gap-4">
+            <AlertDialogAction
+              onClick={handleSubmit}
+              className="shad-submit-btn h-12"
+              type="button"
             >
-              {isLoading ? (
-                <>
-                  <Image
-                    src="/assets/icons/loader.svg"
-                    alt="loader"
-                    width={20}
-                    height={20}
-                    className="mr-2 animate-spin"
-                  />
-                  Verifying...
-                </>
-              ) : (
-                "Verify OTP"
+              Submit
+              {isLoading && (
+                <Image
+                  src="/assets/icons/loader.svg"
+                  alt="loader"
+                  width={24}
+                  height={24}
+                  className="ml-2 animate-spin"
+                />
               )}
-            </Button>
+            </AlertDialogAction>
 
-            <Button
-              variant="outline"
-              onClick={handleResendOTP}
-              disabled={isLoading}
-              className="w-full"
-            >
-              Resend OTP
-            </Button>
+            <div className="subtitle-2 mt-2 text-center text-light-100">
+              Didn&apos;t get a code?
+              <Button
+                type="button"
+                variant="link"
+                className="pl-1 text-brand"
+                onClick={handleResendOtp}
+              >
+                Click to resend
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

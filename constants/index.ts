@@ -85,30 +85,3 @@ export const avatarPlaceholderUrl =
   "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg";
 
 export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-
-export const usageSummary = [
-  {
-    title: "Documents",
-    icon: "/assets/icons/documents.svg",
-    url: "/documents",
-    type: "document",
-  },
-  {
-    title: "Images",
-    icon: "/assets/icons/images.svg",
-    url: "/images",
-    type: "image",
-  },
-  {
-    title: "Media",
-    icon: "/assets/icons/video.svg",
-    url: "/media",
-    type: "video",
-  },
-  {
-    title: "Others",
-    icon: "/assets/icons/others.svg",
-    url: "/others",
-    type: "other",
-  },
-];
