@@ -66,7 +66,7 @@ export const uploadFile = async ({
       owner: ownerId,
       accountId,
       users: [],
-      bucketField: bucketFile.$id,
+      bucketFileId: bucketFile.$id,
     };
 
     const newFile = await databases
@@ -157,10 +157,30 @@ export const renameFile = async ({
   extension,
   path,
 }: RenameFileProps) => {
-  const { databases } = await createAdminClient();
-
   try {
+    // Validate required parameters
+    if (!fileId) {
+      throw new Error("Missing required parameter: fileId");
+    }
+    if (!name) {
+      throw new Error("Missing required parameter: name");
+    }
+    if (!extension) {
+      throw new Error("Missing required parameter: extension");
+    }
+    if (!path) {
+      throw new Error("Missing required parameter: path");
+    }
+
+    const { databases } = await createAdminClient();
+
+    if (!databases) {
+      throw new Error("Failed to create Appwrite client");
+    }
+
     const newName = `${name}.${extension}`;
+    console.log("Renaming file:", { fileId, newName, path });
+    
     const updatedFile = await databases.updateDocument(
       appwriteConfig.databaseId,
       appwriteConfig.filesCollectionId,
@@ -173,6 +193,7 @@ export const renameFile = async ({
     revalidatePath(path);
     return parseStringify(updatedFile);
   } catch (error) {
+    console.error("Rename file error:", { fileId, name, extension, path, error });
     handleError(error, "Failed to rename file");
   }
 };
@@ -182,9 +203,26 @@ export const updateFileUsers = async ({
   emails,
   path,
 }: UpdateFileUsersProps) => {
-  const { databases } = await createAdminClient();
-
   try {
+    // Validate required parameters
+    if (!fileId) {
+      throw new Error("Missing required parameter: fileId");
+    }
+    if (!emails) {
+      throw new Error("Missing required parameter: emails");
+    }
+    if (!path) {
+      throw new Error("Missing required parameter: path");
+    }
+
+    const { databases } = await createAdminClient();
+
+    if (!databases) {
+      throw new Error("Failed to create Appwrite client");
+    }
+
+    console.log("Updating file users:", { fileId, emails, path });
+    
     const updatedFile = await databases.updateDocument(
       appwriteConfig.databaseId,
       appwriteConfig.filesCollectionId,
@@ -197,7 +235,8 @@ export const updateFileUsers = async ({
     revalidatePath(path);
     return parseStringify(updatedFile);
   } catch (error) {
-    handleError(error, "Failed to rename file");
+    console.error("Update file users error:", { fileId, emails, path, error });
+    handleError(error, "Failed to update file users");
   }
 };
 
@@ -206,9 +245,27 @@ export const deleteFile = async ({
   bucketFileId,
   path,
 }: DeleteFileProps) => {
-  const { databases, storage } = await createAdminClient();
-
   try {
+    // Validate required parameters
+    if (!fileId) {
+      throw new Error("Missing required parameter: fileId");
+    }
+    if (!bucketFileId) {
+      throw new Error("Missing required parameter: bucketFileId");
+    }
+    if (!path) {
+      throw new Error("Missing required parameter: path");
+    }
+
+    const { databases, storage } = await createAdminClient();
+
+    if (!databases || !storage) {
+      throw new Error("Failed to create Appwrite client");
+    }
+
+    console.log("Deleting file:", { fileId, bucketFileId, path });
+
+    // First delete the document from the database
     const deletedFile = await databases.deleteDocument(
       appwriteConfig.databaseId,
       appwriteConfig.filesCollectionId,
@@ -216,13 +273,21 @@ export const deleteFile = async ({
     );
 
     if (deletedFile) {
-      await storage.deleteFile(appwriteConfig.bucketId, bucketFileId);
+      // Then delete the file from storage
+      try {
+        await storage.deleteFile(appwriteConfig.bucketId, bucketFileId);
+        console.log("File deleted from storage successfully");
+      } catch (storageError) {
+        console.error("Failed to delete file from storage:", storageError);
+        // Don't throw here as the document was already deleted
+      }
     }
 
     revalidatePath(path);
     return parseStringify({ status: "success" });
   } catch (error) {
-    handleError(error, "Failed to rename file");
+    console.error("Delete file error:", { fileId, bucketFileId, path, error });
+    handleError(error, "Failed to delete file");
   }
 };
 
